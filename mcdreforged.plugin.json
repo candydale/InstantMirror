@@ -1,0 +1,11 @@
+{
+  "id": "instant_mirror",
+  "version": "0.1.0",
+  "name": "Instant Mirror",
+  "description": { "zh_cn": "配合 MCSM 8 使用的快捷镜像服插件" },
+  "author": "CursoR_2333",
+  "link": "https://github.com/candydale/InstantMirror",
+  "dependencies": { "mcdreforged": ">=2.1.2" },
+  "archive_name": "InstantMirror-v{version}",
+  "resources": ["lang", "LICENSE"]
+}
