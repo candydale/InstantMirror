@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Any
 from mcdreforged.api.utils.serializer import Serializable
 
 
@@ -27,6 +27,9 @@ class Configure(Serializable):
         "reload": 2,
         "status": 0,
     }
+    mcsm_port: int = 23333
+    mcsm_server_name: str = "MirrorServer"
+    mcsm_key: str = "1234567890abcdef1234567890abcdef"
 
     def is_file_ignored(self, file_name: str) -> bool:
         for item in self.ignored_files:

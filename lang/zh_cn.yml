@@ -11,3 +11,9 @@ instant_mirror:
     fail: 同步失败 {0}
     time_used: 耗时
     seconds: 秒
+  status:
+    text: 镜像服
+    online: §a§l在线§r
+    starting: §e§l启动中§r
+    offline: §c§l关闭§r
+    fail: 查询失败 {0}

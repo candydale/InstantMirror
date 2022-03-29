@@ -1,8 +1,7 @@
 import os
 import time
 import shutil
-from sys import prefix
-from typing import Any
+import requests
 from distutils.command.config import config
 from mcdreforged.api.all import *
 from instant_mirror.config import Configure
@@ -24,6 +23,38 @@ def print_message(source, msg, tell=True, prefix="§b[Mirror]§r "):
         source.get_server().say(msg)
     else:
         source.reply(msg)
+
+
+def get_status():
+    try:
+        response = requests.get(
+            f"http://127.0.0.1:{config.mcsm_port}/api/status/{config.mcsm_server_name}", timeout=5).json()
+        if not response:
+            raise Exception("服务器不存在")
+    except Exception as e:
+        return {"err": True, "data": e}
+    else:
+        return {"err": False, "data": response}
+
+
+def mirror_status(source):
+    status = get_status()
+    if status["err"]:  # 查询失败
+        print_message(source, text("status.fail", status["data"]))
+    elif not status["data"]["status"]:  # 服务器关闭
+        print_message(
+            source, f"{text('status.text')} {text('status.offline')} ")
+    elif status["data"]["status"] and not status["data"].get("version"):  # 服务器开启但状态查询失败 服务器启动中
+        print_message(
+            source, f"{text('status.text')} {text('status.starting')} ")
+    else:  # 服务器开启且状态查询成功 服务器已启动完成
+        print_message(
+            source,
+            RTextList(
+                f"{text('status.text')} {text('status.online')} ",
+                RText(f"[{text('switch_to_mirror')}]", RColor.green)
+                .h(text("click_to_switch"))
+                .c(RAction.run_command, f"/server {config.mirror_proxy_name}")))
 
 
 @new_thread("InstantMirror - sync")
@@ -79,6 +110,7 @@ def register_command(server):
         .on_error(UnknownArgument, unknown_command, handled=True)
 
         .then(get_literal_node("sync").runs(mirror_sync))
+        .then(get_literal_node("status").runs(mirror_status))
         .then(get_literal_node('reload').runs(
             lambda src: (
                 src.get_server().reload_plugin("instant_mirror"),
