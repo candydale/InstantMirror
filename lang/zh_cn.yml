@@ -1,2 +1,10 @@
 instant_mirror:
   show_help: Instant Mirror 镜像服帮助
+  switch_to_mirror: 转至镜像服→
+  click_to_switch: 点击此处转至镜像服
+  sync:
+    start: 同步中 请稍等
+    finish: 同步完成
+    fail: 同步失败 {0}
+    time_used: 耗时
+    seconds: 秒

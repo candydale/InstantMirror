@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 from sys import prefix
 from typing import Any
@@ -18,7 +19,7 @@ def text(text_key: str, *args) -> RTextMCDRTranslation:
     return ServerInterface.get_instance().rtr(f"instant_mirror.{text_key}", *args)
 
 
-def print_message(source: CommandSource, msg, tell=True, prefix="§b[Mirror] "):
+def print_message(source: CommandSource, msg, tell=True, prefix="§b[Mirror]§r "):
     msg = RTextList(prefix, msg)
     if source.is_player and not tell:
         source.get_server().say(msg)
@@ -26,22 +27,38 @@ def print_message(source: CommandSource, msg, tell=True, prefix="§b[Mirror] "):
         source.reply(msg)
 
 
-def command_run(message: Any, text: Any, command: str) -> RTextBase:
-    fancy_text = message.copy() if isinstance(
-        message, RTextBase) else RText(message)
-    return fancy_text.set_hover_text(text).set_click_event(RAction.run_command, command)
-
-
-@new_thread("Mirror - sync")
+@new_thread("InstantMirror - sync")
 def mirror_sync(source):
-    for world in config.world_names:
-        mirror_world_path = os.path.join(config.mirror_path, world)
-        server_world_path = os.path.join(config.server_path, world)
-        if os.path.exists(mirror_world_path):
-            shutil.rmtree(mirror_world_path)
-        shutil.copytree(server_world_path, mirror_world_path, ignore=lambda path, files: set(
-            filter(config.is_file_ignored, files)))
-    print_message(source, "§6同步完成", tell=False)
+    print_message(source, text("sync.start"), tell=False)
+    time_start = time.time()
+    try:
+        if config.turn_off_auto_save:
+            source.get_server().execute("save-off")
+            source.get_server().execute("save-all flush")
+        for world in config.world_names:
+            mirror_world_path = os.path.join(config.mirror_path, world)
+            server_world_path = os.path.join(config.server_path, world)
+            if os.path.exists(mirror_world_path):
+                shutil.rmtree(mirror_world_path)
+            shutil.copytree(server_world_path, mirror_world_path, ignore=lambda path, files: set(
+                filter(config.is_file_ignored, files)))
+        time_finish = time.time()
+        time_used = round(time_finish - time_start, 1)
+        print_message(
+            source,
+            RTextList(
+                f"{text('sync.finish')} {text('sync.time_used')} §e{time_used}§r {text('sync.seconds')} ",
+                RText(f"[{text('switch_to_mirror')}]", RColor.green)
+                .h(text("click_to_switch"))
+                .c(RAction.run_command, f"/server {config.mirror_proxy_name}")),
+            tell=False)
+    except Exception as e:
+        source.get_server().logger.exception(
+            f"[InstantMirror] Error while syncing to mirror: {e}")
+        print_message(source, text("sync.fail", e), tell=False)
+    finally:
+        if config.turn_off_auto_save:
+            source.get_server().execute("save-on")
 
 
 def show_help(source):

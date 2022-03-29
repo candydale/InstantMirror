@@ -13,6 +13,7 @@ class Configure(Serializable):
     ]
     mirror_path: str = "./mirror"
     server_path: str = "./server"
+    mirror_proxy_name: str = "mirror"
     overwrite_backup_folder: str = "overwrite"
     world_names: List[str] = [
         "world"
