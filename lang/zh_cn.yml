@@ -1,5 +1,7 @@
 instant_mirror:
-  show_help: Instant Mirror 镜像服帮助
+  show_help: 镜像服操作
+  permission_denied: 权限不足
+  unknown_command: 未知指令 请使用 !!mirror 查看帮助
   switch_to_mirror: 转至镜像服→
   click_to_switch: 点击此处转至镜像服
   sync:

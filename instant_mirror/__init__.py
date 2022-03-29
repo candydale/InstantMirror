@@ -19,7 +19,7 @@ def text(text_key: str, *args) -> RTextMCDRTranslation:
     return ServerInterface.get_instance().rtr(f"instant_mirror.{text_key}", *args)
 
 
-def print_message(source: CommandSource, msg, tell=True, prefix="§b[Mirror]§r "):
+def print_message(source, msg, tell=True, prefix="§b[Mirror]§r "):
     msg = RTextList(prefix, msg)
     if source.is_player and not tell:
         source.get_server().say(msg)
@@ -33,8 +33,8 @@ def mirror_sync(source):
     time_start = time.time()
     try:
         if config.turn_off_auto_save:
-            source.get_server().execute("save-off")
-            source.get_server().execute("save-all flush")
+            server_inst.execute("save-off")
+            server_inst.execute("save-all flush")
         for world in config.world_names:
             mirror_world_path = os.path.join(config.mirror_path, world)
             server_world_path = os.path.join(config.server_path, world)
@@ -53,25 +53,47 @@ def mirror_sync(source):
                 .c(RAction.run_command, f"/server {config.mirror_proxy_name}")),
             tell=False)
     except Exception as e:
-        source.get_server().logger.exception(
+        server_inst.logger.exception(
             f"[InstantMirror] Error while syncing to mirror: {e}")
         print_message(source, text("sync.fail", e), tell=False)
     finally:
         if config.turn_off_auto_save:
-            source.get_server().execute("save-on")
+            server_inst.execute("save-on")
 
 
 def show_help(source):
     print_message(source, text("show_help"))
 
 
+def unknown_command(source):
+    print_message(source, text("unknown_command"))
+
+
+def load_config(source):
+    global config
+    config = server_inst.load_config_simple(
+        CONFIG_FILE, target_class=Configure, in_data_folder=False, source_to_reply=source)
+
+
+def register_command(server):
+    def get_literal_node(literal):
+        lvl = config.minimum_permission_level.get(literal, 0)
+        return Literal(literal).requires(lambda src: src.has_permission(lvl)).on_error(RequirementNotMet, lambda src: src.reply(text("§b[Mirror]§r permission_denied")), handled=True)
+
+    server.register_command(
+        Literal("!!mirror")
+        .runs(show_help)
+        .on_error(UnknownArgument, unknown_command, handled=True)
+
+        .then(get_literal_node("sync").runs(mirror_sync))
+        .then(get_literal_node('reload').runs(
+            lambda src: load_config(src)))
+    )
+
+
 def on_load(server, prev):
     global server_inst
     server_inst = server
-    global config
-    config = server_inst.load_config_simple(
-        CONFIG_FILE, target_class=Configure, in_data_folder=False, source_to_reply=CommandSource)
+    load_config(server)
     server.register_help_message("!!mirror", text("show_help"))
-    server.register_command(Literal("!!mirror").runs(show_help)
-                            .then(Literal("sync").runs(mirror_sync))
-                            )
+    register_command(server)
