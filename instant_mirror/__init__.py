@@ -25,6 +25,7 @@ def print_message(source, msg, tell=True, prefix="§b[Mirror]§r "):
         source.reply(msg)
 
 
+@new_thread("InstantMirror - get status")
 def get_status():
     try:
         response = requests.get(
@@ -44,7 +45,8 @@ def mirror_status(source):
     elif not status["data"]["status"]:  # 服务器关闭
         print_message(
             source, f"{text('status.text')} {text('status.offline')} ")
-    elif status["data"]["status"] and not status["data"].get("version"):  # 服务器开启但状态查询失败 服务器启动中
+    # 服务器开启但状态查询失败 服务器启动中
+    elif status["data"]["status"] and not status["data"].get("version"):
         print_message(
             source, f"{text('status.text')} {text('status.starting')} ")
     else:  # 服务器开启且状态查询成功 服务器已启动完成
@@ -59,6 +61,10 @@ def mirror_status(source):
 
 @new_thread("InstantMirror - sync")
 def mirror_sync(source):
+    print_message(source, text("stop"))
+    requests.get(
+        f"http://127.0.0.1:{config.mcsm_port}/api/stop_server/{config.mcsm_server_name}?apikey={config.mcsm_key}", timeout=5).json()
+    time.sleep(5)
     print_message(source, text("sync.start"), tell=False)
     time_start = time.time()
     try:
@@ -74,6 +80,8 @@ def mirror_sync(source):
                 filter(config.is_file_ignored, files)))
         time_finish = time.time()
         time_used = round(time_finish - time_start, 1)
+        requests.get(
+            f"http://127.0.0.1:{config.mcsm_port}/api/start_server/{config.mcsm_server_name}?apikey={config.mcsm_key}", timeout=5).json()
         print_message(
             source,
             RTextList(

@@ -17,3 +17,4 @@ instant_mirror:
     starting: §e§l启动中§r
     offline: §c§l关闭§r
     fail: 查询失败 {0}
+  stop: 正在关闭镜像服
