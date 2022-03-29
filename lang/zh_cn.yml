@@ -1,5 +1,6 @@
 instant_mirror:
   show_help: 镜像服操作
+  reloaded: 已重载插件
   permission_denied: 权限不足
   unknown_command: 未知指令 请使用 !!mirror 查看帮助
   switch_to_mirror: 转至镜像服→

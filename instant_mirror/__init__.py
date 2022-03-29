@@ -9,7 +9,6 @@ from instant_mirror.config import Configure
 
 config: Configure
 server_inst: PluginServerInterface
-HelpMessage: RTextBase
 
 PREFIX = "!!mirror"
 CONFIG_FILE = os.path.join("config", "InstantMirror.json")
@@ -69,16 +68,10 @@ def unknown_command(source):
     print_message(source, text("unknown_command"))
 
 
-def load_config(source):
-    global config
-    config = server_inst.load_config_simple(
-        CONFIG_FILE, target_class=Configure, in_data_folder=False, source_to_reply=source)
-
-
 def register_command(server):
     def get_literal_node(literal):
-        lvl = config.minimum_permission_level.get(literal, 0)
-        return Literal(literal).requires(lambda src: src.has_permission(lvl)).on_error(RequirementNotMet, lambda src: src.reply(text("§b[Mirror]§r permission_denied")), handled=True)
+        lvl = config.minimum_permission_level.get(literal)
+        return Literal(literal).requires(lambda src: src.has_permission(lvl)).on_error(RequirementNotMet, lambda src: print_message(src, text("permission_denied")), handled=True)
 
     server.register_command(
         Literal("!!mirror")
@@ -87,13 +80,16 @@ def register_command(server):
 
         .then(get_literal_node("sync").runs(mirror_sync))
         .then(get_literal_node('reload').runs(
-            lambda src: load_config(src)))
-    )
+            lambda src: (
+                src.get_server().reload_plugin("instant_mirror"),
+                print_message(src, text("reloaded"))))
+              ))
 
 
 def on_load(server, prev):
-    global server_inst
+    global server_inst, config
     server_inst = server
-    load_config(server)
+    config = server_inst.load_config_simple(
+        CONFIG_FILE, target_class=Configure, in_data_folder=False, source_to_reply=server)
     server.register_help_message("!!mirror", text("show_help"))
     register_command(server)
